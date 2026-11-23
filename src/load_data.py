@@ -31,7 +31,7 @@ db_url = URL.create(
     database=os.getenv("DB_NAME", "BAN5003"),
 )
 
-def main():
+def load_data():
     if not os.getenv("DB_PASSWORD"):
         raise RuntimeError("DB_PASSWORD is not set.")
 
@@ -45,11 +45,14 @@ def main():
 
     print(f"Rows loaded: {len(df):,}")
     print(f"Columns loaded: {len(df.columns)}")
+    print("\nColumn names:")
+    print(df.columns.tolist())  
 
     if len(df) != 85571:
         print("Warning: Row count differs from the Stage 1 baseline.")
 
     engine.dispose()
+    return df
 
 if __name__ == "__main__":
-    main()
+    load_data()
