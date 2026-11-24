@@ -1,9 +1,10 @@
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.compose import ColumnTransformer
 
 from load_data import load_data
-
 
 # Setting a random seed so our results are reproducible
 np.random.seed(42)
@@ -40,7 +41,7 @@ train_df, temp_df = train_test_split(
     random_state=42
 )
 
-# Divided the temporary data equally into validation and testing
+# Divide the remaining data into validation and testing
 val_df, test_df = train_test_split(
     temp_df,
     test_size=0.50,
@@ -106,7 +107,7 @@ print(y_train.shape)
 
 # See how many ZIP codes are in the training data
 print("\nUnique ZIP codes:")
-print(X_train["customer_zip_code_prefix"].nunique())
+print(train_df["customer_zip_code_prefix"].nunique())
 
 # Check the number of customer and seller states
 print("\nCustomer states:")
@@ -115,6 +116,43 @@ print(X_train["customer_state"].nunique())
 print("\nSeller states:")
 print(X_train["seller_state"].nunique())
 
+
+# Columns that need to be encoded
+categorical_columns = [
+    "customer_state",
+    "seller_state",
+    "order_month"
+]
+
+# Columns that are already numerical
+numerical_columns = [
+    "order_year",
+    "product_weight_g",
+    "product_length_cm",
+    "product_height_cm",
+    "product_width_cm"
+]
+
+# Prepare the columns for the regression model
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_columns),
+        ("num", "passthrough", numerical_columns)
+    ]
+)
+
+# Fit the preprocessor using only the training data
+X_train_processed = preprocessor.fit_transform(X_train)
+
+# Apply the same changes to validation and testing
+X_val_processed = preprocessor.transform(X_val)
+X_test_processed = preprocessor.transform(X_test)
+
+# Check the data after encoding
+print("\nData shape after encoding:")
+print("Training:", X_train_processed.shape)
+print("Validation:", X_val_processed.shape)
+print("Testing:", X_test_processed.shape)
 
 
 
