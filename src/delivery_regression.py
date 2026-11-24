@@ -154,6 +154,68 @@ print("Training:", X_train_processed.shape)
 print("Validation:", X_val_processed.shape)
 print("Testing:", X_test_processed.shape)
 
+from sklearn.linear_model import LinearRegression
 
+# Start with linear regression
+linear_model = LinearRegression()
 
+# Train the model
+linear_model.fit(X_train_processed, y_train)
 
+# See how well we can predict delivery times
+linear_val_predictions = linear_model.predict(X_val_processed)
+
+print("\nLinear Regression model trained successfully.")
+
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# Check how close our predictions are to the actual delivery times
+linear_mae = mean_absolute_error(y_val, linear_val_predictions)
+linear_rmse = np.sqrt(mean_squared_error(y_val, linear_val_predictions))
+linear_r2 = r2_score(y_val, linear_val_predictions)
+
+# Print the results
+print("\nLinear Regression Results:")
+print(f"MAE: {linear_mae:.2f} days")
+print(f"RMSE: {linear_rmse:.2f} days")
+print(f"R-squared: {linear_r2:.4f}")
+
+from sklearn.ensemble import RandomForestRegressor
+
+# Try random forest to see if it predicts delivery times better
+rf_model = RandomForestRegressor(
+    n_estimators=100,
+    random_state=42,
+    n_jobs=-1
+)
+
+# Train the random forest model
+rf_model.fit(X_train_processed, y_train)
+
+# Predict delivery times using the validation data
+rf_val_predictions = rf_model.predict(X_val_processed)
+
+print("\nRandom Forest model trained successfully.")
+
+# Check how accurate the random forest predictions are
+rf_mae = mean_absolute_error(y_val, rf_val_predictions)
+rf_rmse = np.sqrt(mean_squared_error(y_val, rf_val_predictions))
+rf_r2 = r2_score(y_val, rf_val_predictions)
+
+# Print the random forest results
+print("\nRandom Forest Results:")
+print(f"MAE: {rf_mae:.2f} days")
+print(f"RMSE: {rf_rmse:.2f} days")
+print(f"R-squared: {rf_r2:.4f}")
+
+# Put both model results together so we can compare them
+model_results = pd.DataFrame({
+    "Model": ["Linear Regression", "Random Forest"],
+    "MAE": [linear_mae, rf_mae],
+    "RMSE": [linear_rmse, rf_rmse],
+    "R-squared": [linear_r2, rf_r2]
+})
+
+# Display the results side by side
+print("\nModel Comparison:")
+print(model_results.round(4).to_string(index=False))
