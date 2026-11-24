@@ -268,3 +268,41 @@ if mae_improvement >= 25:
     print("The 25% improvement goal was achieved.")
 else:
     print("The 25% improvement goal was not achieved.")
+
+from pathlib import Path
+
+# Find the outputs folder in the project
+output_dir = Path(__file__).resolve().parent.parent / "outputs"
+output_dir.mkdir(parents=True, exist_ok=True)
+
+# Save the validation results
+model_results.to_csv(
+    output_dir / "model_comparison.csv", index=False
+)
+
+# Put the final testing results together
+final_results = pd.DataFrame({
+    "Model": ["Original Olist Estimates", "Random Forest"],
+    "MAE": [olist_mae, rf_test_mae],
+    "RMSE": [olist_rmse, rf_test_rmse],
+    "R-squared": [r2_score(y_test, olist_estimates), rf_test_r2]
+})
+
+# Save the final testing results
+final_results.to_csv(
+    output_dir / "final_model_results.csv", index=False
+)
+
+# Save the improvement and project goal
+improvement_results = pd.DataFrame({
+    "Target Improvement (%)": [25],
+    "Actual Improvement (%)": [mae_improvement],
+    "MAE Reduction (Days)": [olist_mae - rf_test_mae],
+    "Goal Achieved": [mae_improvement >= 25]
+})
+
+improvement_results.to_csv(
+    output_dir / "delivery_improvement.csv", index=False
+)
+
+print("\nModel results saved to the outputs folder.")
