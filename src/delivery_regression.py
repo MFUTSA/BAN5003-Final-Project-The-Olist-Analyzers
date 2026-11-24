@@ -219,3 +219,52 @@ model_results = pd.DataFrame({
 # Display the results side by side
 print("\nModel Comparison:")
 print(model_results.round(4).to_string(index=False))
+
+# Check if the same order appears more than once
+if "order_id" in df.columns:
+    print("\nOrder ID Check:")
+    print(f"Total rows: {len(df):,}")
+    print(f"Unique orders: {df['order_id'].nunique():,}")
+    print(f"Repeated order IDs: {df['order_id'].duplicated().sum():,}")
+else:
+    print("\nOrder ID is not available in the dataset.")
+
+    # Test the random forest model on unseen data
+rf_test_predictions = rf_model.predict(X_test_processed)
+
+# Calculate the final model performance
+rf_test_mae = mean_absolute_error(y_test, rf_test_predictions)
+rf_test_rmse = np.sqrt(mean_squared_error(y_test, rf_test_predictions))
+rf_test_r2 = r2_score(y_test, rf_test_predictions)
+
+# Display the final testing results
+print("\nFinal Random Forest Testing Results:")
+print(f"MAE: {rf_test_mae:.2f} days")
+print(f"RMSE: {rf_test_rmse:.2f} days")
+print(f"R-squared: {rf_test_r2:.4f}")
+
+# Get Olist's original estimates for the same testing orders
+olist_estimates = df.loc[test_df.index, "est_delivery_days"]
+
+# Calculate the error in Olist's original estimates
+olist_mae = mean_absolute_error(y_test, olist_estimates)
+olist_rmse = np.sqrt(mean_squared_error(y_test, olist_estimates))
+
+# Calculate how much our model improves the original estimates
+mae_improvement = ((olist_mae - rf_test_mae) / olist_mae) * 100
+
+# Display the comparison results
+print("\nOlist Baseline Results:")
+print(f"Original MAE: {olist_mae:.2f} days")
+print(f"Original RMSE: {olist_rmse:.2f} days")
+
+print("\nDelivery Estimate Improvement:")
+print(f"Olist MAE: {olist_mae:.2f} days")
+print(f"Random Forest MAE: {rf_test_mae:.2f} days")
+print(f"MAE Improvement: {mae_improvement:.2f}%")
+
+# Check if we reached our project goal
+if mae_improvement >= 25:
+    print("The 25% improvement goal was achieved.")
+else:
+    print("The 25% improvement goal was not achieved.")
