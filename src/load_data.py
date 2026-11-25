@@ -31,12 +31,12 @@ db_url = URL.create(
     database=os.getenv("DB_NAME", "BAN5003"),
 )
 
-def load_data():
+def load_data(sql_file=SQL_FILE):
     if not os.getenv("DB_PASSWORD"):
         raise RuntimeError("DB_PASSWORD is not set.")
 
-    # Read Matthew's SQL query from its separate file
-    sql_query = SQL_FILE.read_text(encoding="utf-8")
+        # Read the selected SQL file
+    sql_query = sql_file.read_text(encoding="utf-8")
 
     engine = create_engine(db_url)
 
@@ -48,7 +48,7 @@ def load_data():
     print("\nColumn names:")
     print(df.columns.tolist())  
 
-    if len(df) != 85571:
+    if sql_file == SQL_FILE and len(df) != 85571:
         print("Warning: Row count differs from the Stage 1 baseline.")
 
     engine.dispose()
