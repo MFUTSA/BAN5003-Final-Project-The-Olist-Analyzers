@@ -32,6 +32,14 @@ model_df = df[model_columns].dropna().copy()
 train_df, temp_df = train_test_split(model_df, test_size=0.40, random_state=42)
 val_df, test_df = train_test_split(temp_df, test_size=0.50, random_state=42)
 
+# Remove outliers from training data
+before = len(train_df)
+
+days_from_est = df.loc[train_df.index, "days_from_est"]
+train_df = train_df[days_from_est.abs() < 90].copy()
+
+print("Training outliers removed:", before - len(train_df))
+
 print("\nData split:")
 print("Training:", len(train_df))
 print("Validation:", len(val_df))
@@ -194,7 +202,7 @@ output_dir.mkdir(parents=True, exist_ok=True)
 model_results.to_csv(output_dir / "model_comparison.csv", index=False)
 
 final_results = pd.DataFrame({
-    "Model": ["Original Olist Estimates", "Random Forest"],
+    "Model": ["Original Olist Estimates", "Random Forest without Buffer"],
     "MAE": [olist_mae, rf_test_mae],
     "RMSE": [olist_rmse, rf_test_rmse],
     "R-squared": [r2_score(y_test, olist_estimates), rf_test_r2]
@@ -203,12 +211,89 @@ final_results = pd.DataFrame({
 final_results.to_csv(output_dir / "final_model_results.csv", index=False)
 
 improvement_results = pd.DataFrame({
-    "Target Improvement (%)": [25],
-    "Actual Improvement (%)": [mae_improvement],
+    "MAE Benchmark (%)": [25],
+    "Unbuffered MAE Improvement (%)": [mae_improvement],
     "MAE Reduction (Days)": [olist_mae - rf_test_mae],
-    "Goal Achieved": [mae_improvement >= 25]
+    "MAE Benchmark Achieved": [mae_improvement >= 25]
 })
 
 improvement_results.to_csv(output_dir / "delivery_improvement.csv", index=False)
 
 print("\nModel results saved to the outputs folder.")
+
+# Check Olist's original delivery performance
+olist_ratio = (olist_estimates / y_test).median()
+olist_late_rate = (y_test > olist_estimates).mean() * 100
+
+print("\nOriginal Delivery Performance:")
+print(f"Median delivery ratio: {olist_ratio:.2f}")
+print(f"Late deliveries: {olist_late_rate:.2f}%")
+
+# Try different buffer days using validation data
+print("\nBuffer Day Comparison:")
+
+for buffer in range(21):
+    estimates = np.ceil(rf_val_predictions + buffer)
+    ratio = (estimates / y_val).median()
+    late_rate = (y_val > estimates).mean() * 100
+
+    print(f"Buffer: {buffer} days, Ratio: {ratio:.2f}, Late: {late_rate:.2f}%")
+
+    # Try buffer days with linear regression
+print("\nLinear Regression Buffer Comparison:")
+
+for buffer in range(21):
+    estimates = np.ceil(linear_val_predictions + buffer)
+    ratio = (estimates / y_val).median()
+    late_rate = (y_val > estimates).mean() * 100
+
+    print(f"Buffer: {buffer} days, Ratio: {ratio:.2f}, Late: {late_rate:.2f}%")
+
+    # Save buffer comparison results
+buffer_results = []
+
+for buffer in range(21):
+    rf_estimates = np.ceil(rf_val_predictions + buffer)
+    linear_estimates = np.ceil(linear_val_predictions + buffer)
+
+    buffer_results.append({
+        "Buffer Days": buffer,
+        "RF Ratio": (rf_estimates / y_val).median(),
+        "RF Late (%)": (y_val > rf_estimates).mean() * 100,
+        "Linear Ratio": (linear_estimates / y_val).median(),
+        "Linear Late (%)": (y_val > linear_estimates).mean() * 100
+    })
+
+buffer_df = pd.DataFrame(buffer_results)
+buffer_df.to_csv(output_dir / "buffer_comparison.csv", index=False)
+
+print("\nBuffer comparison saved.")
+
+# Test the selected 10-day buffer
+final_buffer = 10
+final_estimates = np.ceil(rf_test_predictions + final_buffer)
+
+final_ratio = (final_estimates / y_test).median()
+final_late_rate = (y_test > final_estimates).mean() * 100
+final_mae = mean_absolute_error(y_test, final_estimates)
+
+print("\nFinal Delivery Performance:")
+print(f"Buffer days: {final_buffer}")
+print(f"Median delivery ratio: {final_ratio:.2f}")
+print(f"Late deliveries: {final_late_rate:.2f}%")
+print(f"MAE with buffer: {final_mae:.2f} days")
+
+# Save final delivery performance
+delivery_results = pd.DataFrame({
+    "Model": ["Original Olist", "Random Forest with 10-Day Buffer"],
+    "Median Delivery Ratio": [olist_ratio, final_ratio],
+    "Late Deliveries (%)": [olist_late_rate, final_late_rate],
+    "MAE": [olist_mae, final_mae]
+})
+
+delivery_results.to_csv(
+    output_dir / "final_delivery_performance.csv",
+    index=False
+)
+
+print("\nFinal delivery performance saved.")
