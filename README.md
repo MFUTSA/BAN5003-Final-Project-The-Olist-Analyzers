@@ -15,6 +15,8 @@ Our primary objectives are:
 - Achieve a median estimated-to-actual delivery ratio between 1.00 and 1.25.
 - Maintain a late delivery rate below 6.9%.
 
+The Random Forest model with a 10-day buffer reduced the late delivery rate from 6.75% to 6.00% and improved mean absolute error from 13.25 to 11.90 days on the test dataset. However, the median delivery ratio remained at 2.21, above the target range of 1.00 to 1.25. Further model adjustments and independent validation are needed before implementation.
+
 ## 2. Installation
 
 ### Requirements
@@ -48,11 +50,18 @@ Package versions are pinned in `requirements.txt` to support reproducibility.
 
 ## 3. Data Loading
 
-The analysis uses the Olist database provided for BAN 5003.
+The analysis uses the Olist PostgreSQL database provided through Canvas for BAN 5003.
 
-Restore the course-provided PostgreSQL backup into a local database named `BAN5003`. Confirm that the required Olist tables are available before running the analysis.
+To set up the database:
 
-Create a `.env` file in the main project folder using the following settings:
+1. Download `olist_postgres_v16.dump` from the course materials in Canvas.
+2. Ensure PostgreSQL 16 is installed and running.
+3. Create a local PostgreSQL database named `BAN5003`.
+4. Restore `olist_postgres_v16.dump` into the `BAN5003` database using PostgreSQL's `pg_restore` utility.
+5. Confirm that the `olist` schema and its tables are available.
+6. Configure the database connection using the `.env` settings below.
+
+The original database backup is not included in the GitHub repository and must be obtained separately.
 
 ```text
 DB_USER=postgres
