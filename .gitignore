@@ -13,3 +13,6 @@ __pycache__/
 
 # Word temp files
 ~$*
+
+# Virtual environment
+.venv/
